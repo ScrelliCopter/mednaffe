@@ -15,8 +15,6 @@ typedef struct {
   SDL_GameControllerAxis map_axis[SDL_CONTROLLER_AXIS_MAX];
 } GameController;
 
-#endif
-
 
 static int IntFromStr(const char *const str, long *out)
 {
@@ -30,6 +28,8 @@ static int IntFromStr(const char *const str, long *out)
   *out = value;
   return 0;
 }
+
+#endif
 
 static const joy_s *GetJoystickFromGUID(GSList *list, const gchar *id)
 {
