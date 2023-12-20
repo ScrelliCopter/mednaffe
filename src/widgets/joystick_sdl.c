@@ -19,12 +19,12 @@ typedef struct
 #endif
 
 
-static int IntFromStr(const char* const cum, long* out)
+static int IntFromStr(const char* const str, long* out)
 {
 	errno = 0;
 	char* end;
-	long value = strtol(cum, &end, 10);
-	if (end == cum)
+	long value = strtol(str, &end, 10);
+	if (end == str)
 		return 1;
 	if (errno == ERANGE)
 		return 2;
