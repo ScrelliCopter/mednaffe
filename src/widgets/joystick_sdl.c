@@ -24,8 +24,6 @@ static gchar *ReadGameController(const gchar *joyid, GameController *pad);
 static int IntFromStr(const char *const str, long *out);
 static gchar *GameControllerButtonDescription(SDL_GameControllerType type, SDL_GameControllerButton button);
 static gchar *GameControllerAxisDescription(SDL_GameControllerType type, SDL_GameControllerAxis axis);
-static void GetButtonMapping(GameController *pad, gchar *token, SDL_GameControllerButton gcbtn);
-static void GetAxisMapping(GameController *pad, gchar *token, SDL_GameControllerAxis gcaxis);
 static int GetGameControllerMapping(GameController *pad);
 
 #endif
@@ -498,85 +496,65 @@ gchar *GameControllerAxisDescription(SDL_GameControllerType type, SDL_GameContro
   }
 }
 
-
-void GetButtonMapping(GameController *pad, gchar *token, SDL_GameControllerButton gcbtn)
-{
-  long joybtn;
-  if (token[0] == 'b' && !IntFromStr(&token[1], &joybtn))
-    pad->map_button[gcbtn] = joybtn;
-}
-
-void GetAxisMapping(GameController *pad, gchar *token, SDL_GameControllerAxis gcaxis)
-{
-  long joyaxis;
-  if (token[0] == 'a' && !IntFromStr(&token[1], &joyaxis))
-    pad->map_axis[gcaxis] = joyaxis;
-}
-
 int GetGameControllerMapping(GameController *pad)
 {
+  const char *const btnmap_table[SDL_CONTROLLER_BUTTON_MAX] = {
+    [SDL_CONTROLLER_BUTTON_A] = "a",
+    [SDL_CONTROLLER_BUTTON_B] = "b",
+    [SDL_CONTROLLER_BUTTON_X] = "x",
+    [SDL_CONTROLLER_BUTTON_Y] = "y",
+    [SDL_CONTROLLER_BUTTON_BACK] = "back",
+    [SDL_CONTROLLER_BUTTON_GUIDE] = "guide",
+    [SDL_CONTROLLER_BUTTON_START] = "start",
+    [SDL_CONTROLLER_BUTTON_LEFTSTICK] = "leftstick",
+    [SDL_CONTROLLER_BUTTON_RIGHTSTICK] = "rightstick",
+    [SDL_CONTROLLER_BUTTON_LEFTSHOULDER] = "leftshoulder",
+    [SDL_CONTROLLER_BUTTON_RIGHTSHOULDER] = "rightshoulder",
+    [SDL_CONTROLLER_BUTTON_DPAD_UP] = "dpup",
+    [SDL_CONTROLLER_BUTTON_DPAD_DOWN] = "dpdown",
+    [SDL_CONTROLLER_BUTTON_DPAD_LEFT] = "dpleft",
+    [SDL_CONTROLLER_BUTTON_DPAD_RIGHT] = "dpright",
+    [SDL_CONTROLLER_BUTTON_MISC1] = "misc1",
+    [SDL_CONTROLLER_BUTTON_PADDLE1] = "paddle1",
+    [SDL_CONTROLLER_BUTTON_PADDLE2] = "paddle2",
+    [SDL_CONTROLLER_BUTTON_PADDLE3] = "paddle3",
+    [SDL_CONTROLLER_BUTTON_PADDLE4] = "paddle4",
+    [SDL_CONTROLLER_BUTTON_TOUCHPAD] = "touchpad"
+  };
+  const char *const axismap_table[SDL_CONTROLLER_AXIS_MAX] = {
+    [SDL_CONTROLLER_AXIS_LEFTX] = "leftx",
+    [SDL_CONTROLLER_AXIS_LEFTY] = "lefty",
+    [SDL_CONTROLLER_AXIS_RIGHTX] = "rightx",
+    [SDL_CONTROLLER_AXIS_RIGHTY] = "righty",
+    [SDL_CONTROLLER_AXIS_TRIGGERLEFT] = "lefttrigger",
+    [SDL_CONTROLLER_AXIS_TRIGGERRIGHT] = "righttrigger"
+  };
+
   char *mapping = SDL_GameControllerMapping(pad->sdlpad);
-  if (!mapping) return 1;
+  if (!mapping)
+  	return 1;
 
   gchar **items = g_strsplit(mapping, ",", 0);
   const unsigned numitems = g_strv_length(items);
   for (unsigned i = 2; i < numitems; ++i)
   {
     gchar **map = g_strsplit(items[i], ":", 2);
-    if (g_strcmp0(map[0], "a") == 0)
-      GetButtonMapping(pad, map[1], SDL_CONTROLLER_BUTTON_A);
-    else if (g_strcmp0(map[0], "b") == 0)
-      GetButtonMapping(pad, map[1], SDL_CONTROLLER_BUTTON_B);
-    else if (g_strcmp0(map[0], "x") == 0)
-      GetButtonMapping(pad, map[1], SDL_CONTROLLER_BUTTON_X);
-    else if (g_strcmp0(map[0], "y") == 0)
-      GetButtonMapping(pad, map[1], SDL_CONTROLLER_BUTTON_Y);
-    else if (g_strcmp0(map[0], "back") == 0)
-      GetButtonMapping(pad, map[1], SDL_CONTROLLER_BUTTON_BACK);
-    else if (g_strcmp0(map[0], "guide") == 0)
-      GetButtonMapping(pad, map[1], SDL_CONTROLLER_BUTTON_GUIDE);
-    else if (g_strcmp0(map[0], "start") == 0)
-      GetButtonMapping(pad, map[1], SDL_CONTROLLER_BUTTON_START);
-    else if (g_strcmp0(map[0], "leftstick") == 0)
-      GetButtonMapping(pad, map[1], SDL_CONTROLLER_BUTTON_LEFTSTICK);
-    else if (g_strcmp0(map[0], "rightstick") == 0)
-      GetButtonMapping(pad, map[1], SDL_CONTROLLER_BUTTON_RIGHTSTICK);
-    else if (g_strcmp0(map[0], "leftshoulder") == 0)
-      GetButtonMapping(pad, map[1], SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
-    else if (g_strcmp0(map[0], "rightshoulder") == 0)
-      GetButtonMapping(pad, map[1], SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
-    else if (g_strcmp0(map[0], "dpup") == 0)
-      GetButtonMapping(pad, map[1], SDL_CONTROLLER_BUTTON_DPAD_UP);
-    else if (g_strcmp0(map[0], "dpdown") == 0)
-      GetButtonMapping(pad, map[1], SDL_CONTROLLER_BUTTON_DPAD_DOWN);
-    else if (g_strcmp0(map[0], "dpleft") == 0)
-      GetButtonMapping(pad, map[1], SDL_CONTROLLER_BUTTON_DPAD_LEFT);
-    else if (g_strcmp0(map[0], "dpright") == 0)
-      GetButtonMapping(pad, map[1], SDL_CONTROLLER_BUTTON_DPAD_RIGHT);
-    else if (g_strcmp0(map[0], "misc1") == 0)
-      GetButtonMapping(pad, map[1], SDL_CONTROLLER_BUTTON_MISC1);
-    else if (g_strcmp0(map[0], "paddle1") == 0)
-      GetButtonMapping(pad, map[1], SDL_CONTROLLER_BUTTON_PADDLE1);
-    else if (g_strcmp0(map[0], "paddle2") == 0)
-      GetButtonMapping(pad, map[1], SDL_CONTROLLER_BUTTON_PADDLE2);
-    else if (g_strcmp0(map[0], "paddle3") == 0)
-      GetButtonMapping(pad, map[1], SDL_CONTROLLER_BUTTON_PADDLE3);
-    else if (g_strcmp0(map[0], "paddle4") == 0)
-      GetButtonMapping(pad, map[1], SDL_CONTROLLER_BUTTON_PADDLE4);
-    else if (g_strcmp0(map[0], "touchpad") == 0)
-      GetButtonMapping(pad, map[1], SDL_CONTROLLER_BUTTON_TOUCHPAD);
-    else if (g_strcmp0(map[0], "leftx") == 0)
-      GetAxisMapping(pad, map[1], SDL_CONTROLLER_AXIS_LEFTX);
-    else if (g_strcmp0(map[0], "lefty") == 0)
-      GetAxisMapping(pad, map[1], SDL_CONTROLLER_AXIS_LEFTY);
-    else if (g_strcmp0(map[0], "rightx") == 0)
-      GetAxisMapping(pad, map[1], SDL_CONTROLLER_AXIS_RIGHTX);
-    else if (g_strcmp0(map[0], "righty") == 0)
-      GetAxisMapping(pad, map[1], SDL_CONTROLLER_AXIS_RIGHTY);
-    else if (g_strcmp0(map[0], "lefttrigger") == 0)
-      GetAxisMapping(pad, map[1], SDL_CONTROLLER_AXIS_TRIGGERLEFT);
-    else if (g_strcmp0(map[0], "righttrigger") == 0)
-      GetAxisMapping(pad, map[1], SDL_CONTROLLER_AXIS_TRIGGERRIGHT);
+  	if (g_strv_length(items) < 2)
+  		continue;
+    long joyval;
+    if (map[1][0] == 'b')
+    {
+      for (int j = 0; j < SDL_CONTROLLER_BUTTON_MAX; ++j)
+        if (g_strcmp0(map[0], btnmap_table[j]) == 0 && !IntFromStr(&map[1][1], &joyval))
+          pad->map_button[j] = joyval;
+    }
+    if (map[1][0] == 'a')
+    {
+      for (int j = 0; j < SDL_CONTROLLER_AXIS_MAX; ++j)
+        if (g_strcmp0(map[0], axismap_table[j]) == 0 && !IntFromStr(&map[1][1], &joyval))
+          pad->map_axis[j] = joyval;
+    }
+    g_strfreev(map);
   }
 
   g_strfreev(items);
