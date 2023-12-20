@@ -8,7 +8,7 @@
 static joy_s *OpenJoystick(int id);
 static gchar *ReadJoystick(const gchar *joyid, SDL_Joystick *sdljoy);
 static gchar *BuildGuid(const gchar *name, gssize namelen, SDL_Joystick *sdljoy);
-static const joy_s *GetJoystickFromGUID(GSList *list, const gchar *id);
+static const joy_s *GetJoystickFromGUID(GSList *restrict list, const gchar *id);
 
 #ifdef ENABLE_SDL_GAMECONTROLLER
 
@@ -20,11 +20,11 @@ typedef struct _GameController {
 } GameController;
 
 static joy_s *OpenGameController(int id);
-static gchar *ReadGameController(const gchar *joyid, GameController *pad);
-static int IntFromStr(const char *const str, long *out);
+static gchar *ReadGameController(const gchar *joyid, GameController *restrict pad);
+static int IntFromStr(const char *str, long *restrict out);
 static gchar *GameControllerButtonDescription(SDL_GameControllerType type, SDL_GameControllerButton button);
 static gchar *GameControllerAxisDescription(SDL_GameControllerType type, SDL_GameControllerAxis axis);
-static int GetGameControllerMapping(GameController *pad);
+static int GetGameControllerMapping(GameController *restrict pad);
 
 #endif
 
@@ -155,7 +155,8 @@ gchar *read_joys(GSList *list)
     else if (joy->type == 2)
       read = ReadGameController(joy->id, (GameController*)joy->data1);
 #endif
-    if (read) break;
+    if (read)
+      break;
   }
   return read;
 }
@@ -168,20 +169,25 @@ void discard_read(GSList *list)
 joy_s *OpenJoystick(int id)
 {
   SDL_Joystick *sdljoy = SDL_JoystickOpen(id);
-  if (!sdljoy) return NULL;
+  if (!sdljoy)
+    return NULL;
 
   gchar *joyname = NULL, *guid = NULL;
 
   const char *name = SDL_JoystickName(sdljoy);
-  if (!name) goto OpenJoystickError;
+  if (!name)
+    goto OpenJoystickError;
   const gsize namelen = strlen(name);
-  if (!(joyname = g_strndup(name, namelen))) goto OpenJoystickError;
+  if (!(joyname = g_strndup(name, namelen)))
+    goto OpenJoystickError;
 
   guid = BuildGuid(name, namelen, sdljoy);
-  if (!guid) goto OpenJoystickError;
+  if (!guid)
+    goto OpenJoystickError;
 
   joy_s *joy = g_new0(joy_s, 1);
-  if (!joy) goto OpenJoystickError;
+  if (!joy)
+    goto OpenJoystickError;
   joy->num   = (gint)SDL_JoystickGetDeviceInstanceID(id);
   joy->type  = 1;
   joy->name  = joyname;
@@ -199,9 +205,7 @@ OpenJoystickError:
 gchar *ReadJoystick(const gchar *joyid, SDL_Joystick *sdljoy)
 {
   unsigned numaxes = SDL_JoystickNumAxes(sdljoy);
-  //unsigned numball = SDL_JoystickNumBalls(sdljoy);
   unsigned numbtns = SDL_JoystickNumButtons(sdljoy);
-  //unsigned numhats = SDL_JoystickNumHats(sdljoy);
 
   for (unsigned i = 0; i < numaxes; ++i)
   {
@@ -227,26 +231,11 @@ gchar *ReadJoystick(const gchar *joyid, SDL_Joystick *sdljoy)
     }
   }
 
-  /*
-  for (unsigned i = 0; i < numball; ++i)
-  {
-    int dx, dy;
-    int ballstate = SDL_JoystickGetBall(sdljoy, i, &dx, &dy);
-  }
-  */
-
   for (unsigned i = 0; i < numbtns; ++i)
   {
     if (SDL_JoystickGetButton(sdljoy, i))
       return g_strdup_printf("joystick %s button_%u", joyid, i);
   }
-
-  /*
-  for (unsigned i = 0; i < numhats; ++i)
-  {
-    Uint8 hatstate = SDL_JoystickGetHat(sdljoy, i);
-  }
-  */
 
   return NULL;
 }
@@ -256,7 +245,8 @@ gchar *BuildGuid(const gchar *name, gssize namelen, SDL_Joystick *sdljoy)
 {
   // Compute MD5 hash of Joystick name
   GChecksum *hash = g_checksum_new(G_CHECKSUM_MD5);
-  if (!hash) return NULL;
+  if (!hash)
+    return NULL;
   guint8 digest[16];
   gsize digestlen = 16;
   g_checksum_update(hash, (guchar*)name, namelen);
@@ -266,7 +256,8 @@ gchar *BuildGuid(const gchar *name, gssize namelen, SDL_Joystick *sdljoy)
   // Build unique ID, a joystick ID is computed by taking the first 64 bits of
   //  the MD5 hash of the name and appending total axis, buttons, hats, and balls.
   gchar *guid = g_malloc(35);
-  if (!guid) return NULL;
+  if (!guid)
+    return NULL;
   snprintf(&guid[0], 3, "0x");
   for (int i = 0; i < 8; ++i)
     snprintf(&guid[2 + i * 2], 3, "%02x", (unsigned char)digest[i]);
@@ -280,9 +271,10 @@ gchar *BuildGuid(const gchar *name, gssize namelen, SDL_Joystick *sdljoy)
   return guid;
 }
 
-const joy_s *GetJoystickFromGUID(GSList *list, const gchar *id)
+const joy_s *GetJoystickFromGUID(GSList *restrict list, const gchar *id)
 {
-  if (!list || !id) return NULL;
+  if (!list || !id)
+    return NULL;
   for (GSList *it = list; it != NULL; it = it->next)
   {
     const joy_s *joy = it->data;
@@ -298,7 +290,8 @@ const joy_s *GetJoystickFromGUID(GSList *list, const gchar *id)
 joy_s *OpenGameController(int id)
 {
   SDL_GameController *sdlpad = SDL_GameControllerOpen(id);
-  if (!sdlpad) return NULL;
+  if (!sdlpad)
+    return NULL;
 
   GameController *pad = NULL;
   gchar *joyname = NULL, *guid = NULL;
@@ -312,17 +305,19 @@ joy_s *OpenGameController(int id)
     pad->map_axis[i] = SDL_CONTROLLER_AXIS_INVALID;
 
   const char *name = SDL_GameControllerName(sdlpad);
-  if (!name) goto OpenGameControllerError;
+  if (!name)
+    goto OpenGameControllerError;
   const gsize namelen = strlen(name);
-  if (!(joyname = g_strndup(name, namelen))) goto OpenGameControllerError;
+  if (!(joyname = g_strndup(name, namelen)))
+    goto OpenGameControllerError;
 
   guid = BuildGuid(name, namelen, pad->sdljoy);
-  if (!guid) goto OpenGameControllerError;
-
-  if (GetGameControllerMapping(pad)) goto OpenGameControllerError;
+  if (!guid || GetGameControllerMapping(pad))
+    goto OpenGameControllerError;
 
   joy_s *joy = g_new0(joy_s, 1);
-  if (!joy) goto OpenGameControllerError;
+  if (!joy)
+    goto OpenGameControllerError;
   joy->num   = (gint)SDL_JoystickGetDeviceInstanceID(id);
   joy->type  = 2;
   joy->name  = joyname;
@@ -330,7 +325,7 @@ joy_s *OpenGameController(int id)
   joy->data1 = (gpointer)pad;
   return joy;
 
-  OpenGameControllerError:
+OpenGameControllerError:
     g_free(guid);
   g_free(joyname);
   g_free(pad);
@@ -338,7 +333,7 @@ joy_s *OpenGameController(int id)
   return NULL;
 }
 
-gchar *ReadGameController(const gchar *joyid, GameController *pad)
+gchar *ReadGameController(const gchar *joyid, GameController *restrict pad)
 {
   SDL_GameController *sdlpad = pad->sdlpad;
 
@@ -350,7 +345,8 @@ gchar *ReadGameController(const gchar *joyid, GameController *pad)
 
   for (int i = 0; i < SDL_CONTROLLER_AXIS_MAX; ++i)
   {
-    if (pad->map_axis[i] <= SDL_CONTROLLER_AXIS_INVALID) continue;
+    if (pad->map_axis[i] <= SDL_CONTROLLER_AXIS_INVALID)
+      continue;
     Sint16 axis =  SDL_GameControllerGetAxis(sdlpad, i);
     if ((i == SDL_CONTROLLER_AXIS_TRIGGERLEFT || i == SDL_CONTROLLER_AXIS_TRIGGERRIGHT) && axis >= 0x4000)
     {
@@ -363,12 +359,11 @@ gchar *ReadGameController(const gchar *joyid, GameController *pad)
     }
   }
 
-  //return ReadJoystick(joyid, pad->sdljoy);
   return NULL;
 }
 
 
-int IntFromStr(const char *const str, long *out)
+int IntFromStr(const char *str, long *restrict out)
 {
   errno = 0;
   char *end;
@@ -496,7 +491,7 @@ gchar *GameControllerAxisDescription(SDL_GameControllerType type, SDL_GameContro
   }
 }
 
-int GetGameControllerMapping(GameController *pad)
+int GetGameControllerMapping(GameController *restrict pad)
 {
   const char *const btnmap_table[SDL_CONTROLLER_BUTTON_MAX] = {
     [SDL_CONTROLLER_BUTTON_A] = "a",
@@ -532,15 +527,15 @@ int GetGameControllerMapping(GameController *pad)
 
   char *mapping = SDL_GameControllerMapping(pad->sdlpad);
   if (!mapping)
-  	return 1;
+    return 1;
 
   gchar **items = g_strsplit(mapping, ",", 0);
   const unsigned numitems = g_strv_length(items);
   for (unsigned i = 2; i < numitems; ++i)
   {
     gchar **map = g_strsplit(items[i], ":", 2);
-  	if (g_strv_length(items) < 2)
-  		continue;
+    if (g_strv_length(items) < 2)
+      continue;
     long joyval;
     if (map[1][0] == 'b')
     {
