@@ -1,0 +1,15 @@
+build/
+cmake-build-*/
+*.o
+config.h
+config.log
+config.status
+Makefile
+stamp-h1
+autom4te.cache/
+configure~
+.deps/
+.DS_Store
+.idea/
+/src/mednaffe
+.dirstamp
